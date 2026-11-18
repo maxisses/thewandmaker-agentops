@@ -1,0 +1,9 @@
+# Release 1.5.1 of the apprentice's rails.
+define bot refuse to respond
+  "I only know wands, wandlore and this shop, I'm afraid. Is there a wand I can help you find?"
+
+define subflow check name
+  $bot_message = execute hide_name_spelled(text=$bot_message)
+
+define subflow check english
+  $bot_message = execute ensure_english(text=$bot_message)

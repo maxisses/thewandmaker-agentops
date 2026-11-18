@@ -1,0 +1,59 @@
+# OpenShift AI 3.5: only what the talk uses.
+#
+#   dashboard              the product UI
+#   kserve                 serving, the base for llm-d and models-as-a-service
+#   aigateway              the model gateway (external models such as Red Hat MaaS)
+#   mlflowoperator         traces for chapter 2 ("the day's scroll")
+#   trustyai               NeMo Guardrails and EvalHub for chapter 3
+#   mcplifecycleoperator   runs MCP servers from a CR (the shop's tools)
+#   ogx                    agent runtime with human-in-the-loop tool approval
+#
+# Everything else stays Removed to keep the cluster small.
+apiVersion: datasciencecluster.opendatahub.io/v2
+kind: DataScienceCluster
+metadata:
+  name: default-dsc
+spec:
+  components:
+    dashboard:
+      managementState: Managed
+    kserve:
+      managementState: Managed
+      modelsAsService:
+        managementState: Removed
+      nim:
+        managementState: Removed
+      wva:
+        managementState: Removed
+    aigateway:
+      managementState: Managed
+      batchGateway:
+        managementState: Removed
+    mlflowoperator:
+      managementState: Managed
+    trustyai:
+      managementState: Managed
+    mcplifecycleoperator:
+      managementState: Managed
+    ogx:
+      managementState: Managed
+    aipipelines:
+      managementState: Removed
+    feastoperator:
+      managementState: Removed
+    kueue:
+      managementState: Removed
+    llamastackoperator:
+      managementState: Removed
+    modelregistry:
+      managementState: Removed
+    ray:
+      managementState: Removed
+    sparkoperator:
+      managementState: Removed
+    trainer:
+      managementState: Removed
+    trainingoperator:
+      managementState: Removed
+    workbenches:
+      managementState: Removed

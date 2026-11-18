@@ -1,0 +1,92 @@
+# The tool gateway: Gateway API + MCP gateway (Kuadrant, Red Hat preview 0.7.1).
+#
+# The apprentice talks to one address, http://tool-gateway.ollivanders.svc:8080/mcp, and sees
+# the shop's tools with the prefix "shop_". The gateway holds the shop's key
+# (secret shop-tools-credential, created by gitops/20-shop/install.sh) and adds it on the way in.
+# Cluster-internal only: no load balancer, no route.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: tool-gateway
+  namespace: ollivanders
+  annotations:
+    networking.istio.io/service-type: ClusterIP
+spec:
+  gatewayClassName: data-science-gateway-class
+  listeners:
+    - name: mcp
+      hostname: tool-gateway.ollivanders.svc
+      port: 8080
+      protocol: HTTP
+      allowedRoutes:
+        namespaces: {from: All}
+    - name: mcps
+      hostname: "*.mcp.local"
+      port: 8080
+      protocol: HTTP
+      allowedRoutes:
+        namespaces: {from: All}
+---
+# A short, stable name for the gateway pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: tool-gateway
+  namespace: ollivanders
+spec:
+  selector:
+    gateway.networking.k8s.io/gateway-name: tool-gateway
+  ports:
+    - {name: http, port: 8080, targetPort: 8080}
+---
+apiVersion: mcp.kuadrant.io/v1alpha1
+kind: MCPGatewayExtension
+metadata:
+  name: tool-gateway
+  namespace: ollivanders
+spec:
+  publicHost: tool-gateway.ollivanders.svc
+  # How the broker reaches the gateway from inside (hairpin to the registered servers).
+  # Without it, it guesses the Istio default name "<gateway>-istio", which doesn't exist here.
+  privateHost: tool-gateway.ollivanders.svc.cluster.local:8080
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: tool-gateway
+    namespace: ollivanders
+    sectionName: mcp
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: shop-tools
+  namespace: ollivanders
+spec:
+  parentRefs:
+    - name: tool-gateway
+      namespace: ollivanders
+      sectionName: mcps
+  hostnames:
+    - shop.mcp.local
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /mcp}
+      backendRefs:
+        - name: shop-tools
+          port: 8080
+---
+apiVersion: mcp.kuadrant.io/v1alpha1
+kind: MCPServerRegistration
+metadata:
+  name: shop
+  namespace: ollivanders
+spec:
+  prefix: shop_
+  path: /mcp
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: shop-tools
+  credentialRef:
+    name: shop-tools-credential
+    key: token

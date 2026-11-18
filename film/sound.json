@@ -1,0 +1,21 @@
+[
+  {"note": "1 alley: rain on cobbles",            "file": "01-rain-alley.mp3", "at": 0.0,  "len": 6.4,  "level": -29, "in": 0.6, "out": 0.5},
+  {"note": "2 shop: the same rain, outside",      "file": "01-rain-alley.mp3", "at": 5.9,  "from": 0.5, "len": 5.3, "level": -38, "in": 0.5, "out": 0.5},
+  {"note": "2 box slides into the shelf, ladder", "file": "02-shelf.mp3",      "at": 6.1,  "len": 4.3,  "peak": -12, "in": 0.1, "out": 0.4},
+  {"note": "3 notebooks shift, then topple",      "file": "03-notebooks.mp3",  "at": 11.1, "from": 0.5, "len": 5.5, "level": -27, "in": 0.2, "out": 0.3},
+  {"note": "3 the queue outside the window",      "file": "04-crowd.mp3",      "at": 11.1, "len": 6.0,  "level": -36, "in": 0.4, "out": 0.4},
+  {"note": "4 armchair: fire, teacup",            "file": "05-fire.mp3",       "at": 17.0, "len": 5.3,  "level": -30, "in": 0.4, "out": 0.5},
+  {"note": "5-6 night: rain on the window",       "file": "06-night-rain.mp3", "at": 22.0, "len": 10.0, "level": -34, "in": 0.5, "out": 0.8},
+  {"note": "6-7 night goes on",                   "file": "06-night-rain.mp3", "at": 31.4, "from": 0.3, "len": 9.0, "level": -34, "in": 0.8, "out": 0.6},
+  {"note": "7 he types through the night",        "file": "07-typing.mp3",     "at": 33.3, "len": 7.0,  "level": -28, "in": 0.2, "out": 0.4},
+  {"note": "8 the spark rises and flies off",     "file": "08-spark.mp3",      "at": 40.3, "len": 6.0,  "peak": -9,  "in": 0.2, "out": 0.6},
+  {"note": "8-11 shop by day: quiet hearth",      "file": "05-fire.mp3",       "at": 39.9, "len": 19.7, "level": -40, "in": 0.6, "out": 0.6, "loop": 3},
+  {"note": "9 the ring of keys",                  "file": "09-keys.mp3",       "at": 46.5, "from": 0.25, "len": 2.2, "peak": -12, "in": 0.05, "out": 0.5},
+  {"note": "9 the keys turn again",               "file": "09-keys.mp3",       "at": 49.0, "from": 0.25, "len": 2.0, "peak": -15, "in": 0.05, "out": 0.5},
+  {"note": "10 the back-room door shuts",         "file": "10-door.mp3",       "at": 51.4, "from": 2.3, "len": 2.7, "peak": -10, "in": 0.15, "out": 0.1},
+  {"note": "11 customers outside the door",       "file": "04-crowd.mp3",      "at": 55.3, "len": 4.3,  "level": -31, "in": 0.4, "out": 0.4},
+  {"note": "12 owls, children running",           "file": "11-owls.mp3",       "at": 59.4, "len": 5.2,  "level": -26, "in": 0.3, "out": 0.5},
+  {"note": "13 morning shop: quiet hearth",       "file": "05-fire.mp3",       "at": 64.3, "len": 5.5,  "level": -40, "in": 0.5, "out": 0.6},
+  {"note": "13 he turns the hat in his hands",    "file": "12-hat.mp3",        "at": 64.6, "len": 5.0,  "level": -34, "in": 0.2, "out": 0.6},
+  {"note": "13 the spark beside him",             "file": "08-spark.mp3",      "at": 65.0, "from": 0.8, "len": 3.0, "level": -40, "in": 0.8, "out": 1.0}
+]

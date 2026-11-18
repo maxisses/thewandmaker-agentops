@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backstage</title>
+<link rel="stylesheet" href="/static/shop.css?v=4">
+<style>
+main.bs { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 18px; padding: 16px 20px; }
+.bs section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; overflow-y: auto; min-height: 0; }
+.bs h2 { margin: 0 0 6px; font: 400 24px var(--title); letter-spacing: .03em; }
+.bs h2:not(:first-child) { margin-top: 14px; }
+.bs #steps + h2 { margin-top: 22px; }
+.bs ol { margin: 0; padding-left: 1.3em; }
+.bs li { margin: 0 0 5px; }
+.bs code { font-family: var(--mono); font-size: .82em; background: var(--soft); padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
+.bs a { color: var(--red); }
+.bs .links { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.bs .links a { text-decoration: none; border: 1px solid var(--line); border-radius: 99px; padding: 1px 12px; color: var(--ink); background: #fff8e6; }
+.bs .links a:hover { border-color: var(--gold); }
+.bs .keys { color: var(--mid); margin: 0; }
+.bs .keys b { font-family: var(--mono); font-size: .85em; color: var(--ink); }
+.bs table { width: 100%; border-collapse: collapse; }
+.bs td { padding: 3px 8px 3px 0; vertical-align: top; border-top: 1px solid var(--line); }
+.bs td:first-child { white-space: nowrap; color: var(--mid); }
+.bs .btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.bs .btns button { font-size: 1.05em; padding: 12px 10px; border-radius: 10px; }
+.bs .btns button small { display: block; font-size: .7em; opacity: .8; }
+.bs .btns .go { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.bs #verdict { font: 400 28px var(--title); margin: 4px 0 2px; }
+.bs #verdict.ok { color: var(--ok); } .bs #verdict.fail { color: var(--red); } .bs #verdict.check { color: #9a6a00; }
+.bs #now { color: var(--mid); font-style: italic; min-height: 1.4em; margin: 0 0 6px; }
+.bs .st { font-family: var(--mono); font-size: .8em; font-weight: 700; text-transform: uppercase; }
+.bs .st.ok { color: var(--ok); } .bs .st.fail { color: var(--red); } .bs .st.check { color: #9a6a00; }
+html.embed main.bs { font-size: 20px; padding: 14px 18px; }
+html.embed .bs h2 { font-size: 28px; }
+@media (max-width: 900px) { main.bs { grid-template-columns: 1fr; } .bs section { overflow: visible; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Backstage</h1><span class="sub">everything for a run of the talk</span>
+</header>
+<main class="bs">
+  <section>
+    <h2>Before the talk</h2>
+    <ol>
+      <li>You typed the deck's password, so the demos run live. This browser remembers you; <b>lock</b> in the top right corner forgets it again.</li>
+      <li>Log in to the <a id="l-console" target="olli-ocp" rel="noopener">OpenShift console</a> in this browser: user <code>cluster-admin</code>, the password is in <code>local/cluster-admin-password</code> on the presenter's laptop. The deck's links into the console (topology, the rails' config maps) and MLflow need it.</li>
+      <li>Press <b>Prepare</b> on the right and wait for READY. Take <b>Prepare with the night</b> once on the day of the talk: it fills "while the shop was shut" on the scroll slide.</li>
+      <li>Optional, from the laptop: <code>make dashboard</code> brings the digital apprentice's own console to the "open it live" link (Chrome only, it lives on <code>127.0.0.1</code>); <code>make shell-ui</code> opens OpenShell's terminal UI for the policy slide.</li>
+      <li>Next slide, <b>F</b> for full screen, sound check on the film, back to the curtain. Stay on a slide before the first demo for a few seconds: the live frames load in the background.</li>
+    </ol>
+    <h2>Between a rehearsal and the real run</h2>
+    <ol>
+      <li>Press <b>Reset</b>: requests, fittings, conversations and every counter go back to zero.</li>
+      <li>Reload the deck. If you switched a slide to scripted with <b>M</b>, switch it back.</li>
+    </ol>
+    <h2>Keys</h2>
+    <p class="keys"><b>→</b> or <b>space</b> next · <b>←</b> back · <b>N</b> speaker notes · <b>R</b> restart the slide · <b>M</b> live or scripted on a demo slide · <b>F</b> full screen</p>
+    <h2>Every address</h2>
+    <div class="links" id="links"></div>
+  </section>
+  <section>
+    <div class="btns">
+      <button class="go" data-run="prepare">Prepare<small>about 2 minutes</small></button>
+      <button data-run="night">Prepare with the night<small>about 4 minutes</small></button>
+      <button data-run="reset">Reset<small>5 seconds</small></button>
+    </div>
+    <div id="verdict">Nothing has run yet.</div>
+    <p id="now"></p>
+    <table id="steps"></table>
+    <h2>If something looks wrong</h2>
+    <table>
+      <tr><td>"lost for words"</td><td>Press Prepare: it restarts the OpenClaw gateways. If the oracles row fails, a model key ran out: fix it in <code>.env</code>, then <code>make up-shop</code>.</td></tr>
+      <tr><td>A live frame stays empty</td><td>Reload the deck. Still empty: <b>M</b> puts the scripted version on.</td></tr>
+      <tr><td>A link opens a login page</td><td>Log in there once, then click the link again.</td></tr>
+      <tr><td>This page says "open it with its key"</td><td>Open the deck and type the password on slide 1 again.</td></tr>
+    </table>
+  </section>
+</main>
+<script src="/static/embed.js"></script>
+<script>
+let key = new URLSearchParams(location.hash.slice(1)).get("key");
+try { if (key) sessionStorage.setItem("deskKey", key); else key = sessionStorage.getItem("deskKey"); } catch (e) {}
+if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+const H = () => ({ "x-desk-token": key || "", "content-type": "application/json" });
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const KINDS = { prepare: "Preparing", night: "Preparing, with the night", reset: "Resetting" };
+let linked = false;
+
+function links(l) {
+  if (linked) return;
+  linked = true;
+  const c = (l.console || "").replace(/\/$/, ""), ai = c.replace("console-openshift-console", "rh-ai"), k = "#key=" + encodeURIComponent(key || "");
+  const rows = [];
+  if (c) {
+    document.getElementById("l-console").href = c;
+    rows.push(["OpenShift console", c], ["Topology of the shop", c + "/topology/ns/" + l.namespace + "?view=graph"],
+      ["The digital apprentices' pods", c + "/k8s/ns/openshell/pods"],
+      ["Rails 1.5.1, config map", c + "/k8s/ns/" + l.namespace + "/configmaps/rails-1-5-1"],
+      ["OpenShift AI", ai], ["MLflow", ai + "/mlflow"]);
+  }
+  if (l.deck) rows.push(["The deck", l.deck]);
+  rows.push(["Shop chat", "/"], ["Phone page", "/phone"], ["QR code", "/qr.svg"], ["The master's desk", "/desk" + k],
+    ["The day's scroll", "/scroll" + k], ["The rails", "/rails" + k], ["The second oracle", "/campaign" + k]);
+  document.getElementById("links").innerHTML = rows.map(([n, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("");
+}
+
+function paint(d) {
+  links(d.links || {});
+  const fails = d.steps.filter(s => s.status === "fail").length, checks = d.steps.filter(s => s.status === "check").length;
+  const v = document.getElementById("verdict");
+  const took = d.took >= 60 ? Math.floor(d.took / 60) + " min " + (d.took % 60) + " s" : d.took + " s";
+  if (d.running) { v.className = ""; v.textContent = KINDS[d.running] + "… " + took; }
+  else if (!d.finished) { v.className = ""; v.textContent = "Nothing has run since the shop last started."; }
+  else {
+    v.className = fails ? "fail" : checks ? "check" : "ok";
+    v.textContent = (fails ? "NOT READY" : checks ? "READY, with things to look at" : "READY")
+      + " · " + new Date(d.finished * 1000).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + " · " + took;
+  }
+  document.getElementById("now").textContent = d.running ? d.now : "";
+  document.querySelectorAll(".btns button").forEach(b => { b.disabled = !!d.running; });
+  document.getElementById("steps").innerHTML = d.steps.map(s =>
+    `<tr><td><span class="st ${esc(s.status)}">${esc(s.status)}</span></td><td>${esc(s.step)}</td><td>${esc(s.what)}</td></tr>`).join("");
+}
+
+async function load(run) {
+  try {
+    const r = await fetch("/api/backstage", run ? { method: "POST", headers: H(), body: JSON.stringify({ run }) } : { headers: H() });
+    if (r.status === 401) {
+      document.getElementById("verdict").textContent = "The wand maker's view. Open it with its key: /backstage#key=…";
+      document.querySelectorAll(".btns button").forEach(b => { b.disabled = true; });
+      return;
+    }
+    paint(await r.json());
+  } catch (e) { /* the shop is restarting; the next poll tries again */ }
+}
+document.querySelectorAll(".btns button").forEach(b => { b.onclick = () => { b.blur(); load(b.dataset.run); }; });
+load(); setInterval(load, 1500);
+</script>
+</body>
+</html>

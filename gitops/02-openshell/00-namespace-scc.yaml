@@ -1,0 +1,85 @@
+# OpenShell namespace and the narrow SCC for sandbox pods.
+#
+# Each sandbox pod runs a root supervisor that builds the cage (network namespace, veth pair,
+# seccomp, Landlock) and then starts the agent as an ordinary user with zero capabilities.
+# The supervisor needs four capabilities for that. This SCC grants exactly those and keeps
+# host network, host PID/IPC, host paths and privileged mode closed. It follows
+# vendor/agent-ops/scc-requirements.md (tested on ROSA 4.22.8). If sandbox pods are rejected
+# at admission, the fallback is the stock "privileged" SCC (see install.sh).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openshell
+  labels:
+    olli.dev/part: openshell
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: openshell-sandbox-minimum-required
+  annotations:
+    kubernetes.io/description: >-
+      OpenShell sandbox supervisor: runs as root with SYS_ADMIN, NET_ADMIN, SYS_PTRACE and
+      SYSLOG to set up isolation, then drops everything for the agent process.
+allowPrivilegedContainer: false
+allowPrivilegeEscalation: true
+allowHostNetwork: false
+allowHostPID: false
+allowHostIPC: false
+allowHostPorts: false
+allowHostDirVolumePlugin: false
+readOnlyRootFilesystem: false
+allowedCapabilities:
+  - SYS_ADMIN
+  - NET_ADMIN
+  - SYS_PTRACE
+  - SYSLOG
+defaultAddCapabilities: []
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+  - unconfined
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - image          # the supervisor binary arrives as an image volume
+  - persistentVolumeClaim
+  - projected
+  - secret
+priority: null
+users: []
+groups: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:openshift:scc:openshell-sandbox-minimum-required
+rules:
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    resourceNames: ["openshell-sandbox-minimum-required"]
+    verbs: ["use"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openshell-sandbox-scc
+  namespace: openshell
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:openshell-sandbox-minimum-required
+subjects:
+  - kind: ServiceAccount
+    name: openshell-sandbox
+    namespace: openshell

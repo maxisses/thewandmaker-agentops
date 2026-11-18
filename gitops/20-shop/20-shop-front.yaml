@@ -1,0 +1,103 @@
+# shop-front: the shop chat and the master's desk, public through an edge route.
+# It reaches the apprentice only through the OpenShell gateway (mTLS client certificate copied
+# from the openshell namespace by install.sh as secret openshell-client-tls).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-front
+  namespace: ollivanders
+  labels: {app: shop-front}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"shop:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"shop-front\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: shop-front}
+  template:
+    metadata:
+      labels: {app: shop-front}
+    spec:
+      containers:
+        - name: shop-front
+          image: image-registry.openshift-image-registry.svc:5000/ollivanders/shop:latest
+          command: ["python", "-m", "shop.front"]
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - name: SHOP_DESK_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-tokens, key: desk}}
+            - {name: SHOP_TOOLS_URL, value: "http://shop-tools:8080"}
+            - {name: APPRENTICE_SANDBOX, value: apprentice}
+            - {name: OPENSHELL_ENDPOINT, value: "https://openshell.openshell.svc.cluster.local:8080"}
+            # The day's scroll reads traces from MLflow (gitops/12-mlflow, gitops/22-traces).
+            - {name: MLFLOW_URL, value: "https://mlflow.redhat-ods-applications.svc:8443/mlflow"}
+            - {name: MLFLOW_WORKSPACE, value: ollivanders}
+            - name: MLFLOW_EXPERIMENT_ID
+              valueFrom: {configMapKeyRef: {name: scribe, key: experiment_id, optional: true}}
+            - name: MLFLOW_UI
+              valueFrom: {configMapKeyRef: {name: scribe, key: mlflow_ui, optional: true}}
+            - {name: AUDIT_SANDBOXES, value: "apprentice,apprentice-2,apprentice-3"}
+            # Chapter 4: phones are served by a pool of apprentices; RUSH_MAX turns run at once so
+            # the rented oracle (MaaS) is not flooded, the rest wait outside.
+            - {name: APPRENTICE_POOL, value: "apprentice,apprentice-2,apprentice-3"}
+            - {name: RUSH_MAX, value: "8"}
+            # Red-team campaigns run two turns at a time. Red Hat MaaS limits tokens per minute
+            # (400,000 on 15 November); the model gateway paces calls to stay under it, and two at a
+            # time keeps a campaign from waiting on itself.
+            - {name: CAMPAIGN_PARALLEL, value: "2"}
+            # The backstage page's links (console, deck): read from the cluster by install.sh, so
+            # nothing about one cluster is written into this file.
+            - name: CONSOLE_URL
+              valueFrom: {configMapKeyRef: {name: shop-links, key: console, optional: true}}
+            - name: DECK_URL
+              valueFrom: {configMapKeyRef: {name: shop-links, key: deck, optional: true}}
+            # The hosted deck's password (secret deck-login, from DECK_PASSWORD in .env). Without the
+            # secret the shop starts all the same and the deck's password door stays shut.
+            - name: DECK_PASSWORD
+              valueFrom: {secretKeyRef: {name: deck-login, key: password, optional: true}}
+            # The presenter's clock: the night run's stamp and the times on the backstage page.
+            # Laptop runs (make night) stamp in local time; the newest stamp wins on the scroll.
+            - {name: TZ, value: Europe/Berlin}
+            - name: SHOP_NAMESPACE
+              valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+            # Versions for the deck's architecture picture, written by gitops/20-shop/facts.sh.
+            - name: PLATFORM_FACTS
+              valueFrom: {configMapKeyRef: {name: platform-facts, key: facts.json, optional: true}}
+          volumeMounts:
+            - {name: openshell-mtls, mountPath: /etc/openshell-mtls, readOnly: true}
+            - {name: scribe-token, mountPath: /etc/scribe, readOnly: true}
+            - {name: service-ca, mountPath: /etc/service-ca, readOnly: true}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+      volumes:
+        - name: openshell-mtls
+          secret: {secretName: openshell-client-tls}
+        - name: scribe-token
+          secret: {secretName: scribe-token, items: [{key: token, path: token}], optional: true}
+        - name: service-ca
+          configMap: {name: service-ca, optional: true}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-front
+  namespace: ollivanders
+spec:
+  selector: {app: shop-front}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: shop
+  namespace: ollivanders
+  annotations:
+    haproxy.router.openshift.io/timeout: 240s
+spec:
+  to: {kind: Service, name: shop-front}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}

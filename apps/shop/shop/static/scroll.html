@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The day's scroll</title>
+<link rel="stylesheet" href="/static/shop.css?v=3">
+</head>
+<body class="scrollpage">
+<header>
+  <h1>The day's scroll</h1><span class="sub">traces in MLflow, refusals from OpenShell</span>
+  <div class="right"><button id="reload" title="Read the scroll again">Refresh</button></div>
+</header>
+<main>
+  <div class="scroll">
+    <section class="list">
+      <div class="filter">
+        <span class="chip on" data-f="today">today</span>
+        <span class="chip" data-f="denied">refused</span>
+        <span class="chip" data-f="night">while the shop was shut</span>
+        <span class="count"></span>
+      </div>
+      <div class="hd"><span>time</span><span>who and what</span><span>status</span><span>took</span></div>
+      <div class="rows"><p class="empty">Reading the scroll…</p></div>
+    </section>
+    <section class="detail"><p class="empty">Pick a line on the left.</p></section>
+  </div>
+</main>
+<script src="/static/embed.js"></script>
+<script>
+// The desk key comes in the URL fragment (#key=...) and goes out as a header, like on the desk.
+let key = new URLSearchParams(location.hash.slice(1)).get("key");
+try { if (key) sessionStorage.setItem("deskKey", key); else key = sessionStorage.getItem("deskKey"); } catch (e) {}
+if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+const H = () => ({ "x-desk-token": key || "" });
+// The scroll shows what the model and the tools really said, but never prints the name: blacked out.
+const NAME = /(lord\s+)?(voldemort|tom\s+(marvolo\s+)?riddle|marvolo|\bRiddle\b)/gi;
+const esc = s => String(s ?? "").replace(NAME, "█████").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const $ = s => document.querySelector(s);
+const hhmm = ms => new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+const hms = ms => new Date(ms).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const secs = ms => ms >= 1000 ? (ms / 1000).toFixed(1) + " s" : ms + " ms";
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+let all = [], requests = [], filter = "today", current = null, run = 0, dayStarted = 0, opening = Promise.resolve();
+const isNight = t => /^night-/.test(t.session);
+// A night run names its visits night-<month day hour minute>-<n>. Only the newest run is shown:
+// an older night would double the count, and may still carry wording we have since changed.
+const nightRun = t => (/^night-(\d+)/.exec(t.session) || [])[1] || "";
+let lastNight = "";
+const FILTERS = {
+  today: t => !isNight(t) && t.start >= dayStarted * 1000,
+  denied: t => t.status === "denied",
+  night: t => isNight(t) && nightRun(t) === lastNight
+};
+const WHO = c => c.replace(/^a /, "").replace(/, name not given$/, "");
+const label = t => { const c = WHO(t.customer || "someone"); return c.charAt(0).toUpperCase() + c.slice(1); };
+const ST = { ok: "ok", denied: "refused", error: "error" };
+
+async function load() {
+  try {
+    const r = await fetch("/api/scroll/traces", { headers: H() });
+    if (r.status === 401) { $(".rows").innerHTML = `<p class="empty">The scroll is the wand maker's. Open it with /scroll#key=…</p>`; return; }
+    const d = await r.json();
+    if (d.error) { $(".rows").innerHTML = `<p class="empty">${esc(d.error)}</p>`; return; }
+    all = d.traces || []; requests = d.requests || []; dayStarted = d.dayStarted || 0;
+    lastNight = all.filter(isNight).map(nightRun).sort().pop() || "";
+  } catch (e) { return; }
+  list();
+}
+
+function list() {
+  const rows = all.filter(FILTERS[filter]);
+  document.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.f === filter));
+  $(".rows").innerHTML = rows.length ? rows.map(t => `
+    <div class="tr ${current === t.id ? "sel" : ""}" data-id="${esc(t.id)}">
+      <span>${hhmm(t.start)}</span>
+      <span class="who">${esc(label(t))} · “${esc(t.text)}”</span>
+      <span class="st ${esc(t.status)}">${ST[t.status] || esc(t.status)}</span>
+      <span>${secs(t.ms)}</span>
+    </div>`).join("") : `<p class="empty">Nothing on the scroll yet.</p>`;
+  let count = "";
+  if (filter === "night" && rows.length) {
+    const refused = rows.filter(t => t.status === "denied").length;
+    const opened = requests.filter(q => q.status === "approved").length;
+    count = `${rows.length} visits · the lock said no ${refused} times · ${opened} cabinet openings`;
+  } else if (filter === "denied") count = rows.length + " refused";
+  $(".count").textContent = count;
+}
+
+async function open(id) {
+  const my = ++run;
+  current = id;
+  document.querySelectorAll(".tr").forEach(r => r.classList.toggle("sel", r.dataset.id === id));
+  const row = document.querySelector(`.tr[data-id="${CSS.escape(id)}"]`);
+  if (row) row.scrollIntoView({ block: "nearest" });
+  const det = $(".detail");
+  det.innerHTML = `<p class="empty">Unrolling…</p>`;
+  const r = await fetch("/api/scroll/trace/" + encodeURIComponent(id), { headers: H() });
+  const d = await r.json();
+  if (my !== run) return;
+  const s = d.summary || {}, spans = d.spans || [];
+  const llm = spans.filter(x => x.kind === "llm").length, tools = spans.filter(x => x.kind === "tool" || x.kind === "denied").length;
+  det.innerHTML = `<h5>${esc(label(s))} · “${esc(s.text)}”</h5>
+    <div class="meta">${hms(s.start)} · ${secs(d.total || s.ms)} · ${llm} model calls · ${tools} tool calls${s.tokens ? " · " + s.tokens.toLocaleString() + " tokens" : ""}
+    ${d.mlflowUrl ? ` · <a href="${esc(d.mlflowUrl)}" target="_blank" rel="noopener">open in MLflow</a>` : ""}<br>trace ${esc(id)}</div>
+    <div class="spans"></div><div class="sd"></div>`;
+  det._data = d;
+  const box = $(".spans"), total = d.total || 1;
+  spans.forEach((x, i) => {
+    const el = document.createElement("div");
+    el.className = "span " + x.kind;
+    el.dataset.i = i;
+    el.innerHTML = `<span class="nm">${"&nbsp;".repeat(x.depth * 3)}${esc(x.label)}</span>
+      <span class="bar"><b style="left:${100 * x.start / total}%;width:${Math.max(0.4, 100 * x.ms / total)}%"></b></span><span class="ms">${secs(x.ms)}</span>`;
+    el.onclick = () => detail(i);
+    box.appendChild(el);
+  });
+  const reqs = d.requests || [];
+  reqs.forEach(q => {
+    const el = document.createElement("div");
+    el.className = "span req " + (q.status === "approved" ? "" : "denied");
+    el.innerHTML = `<span class="nm">desk · request ${esc(q.id)}</span><span class="bar"><b style="left:0;width:100%;opacity:.35"></b></span><span class="ms">${esc(q.status)}</span>`;
+    el.onclick = () => deskDetail(q);
+    box.appendChild(el);
+  });
+  for (const el of box.children) { await sleep(120); if (my !== run) return; el.classList.add("on"); }
+}
+
+function pretty(v) {
+  if (v == null) return "";
+  if (typeof v !== "string") return JSON.stringify(v, null, 1);
+  try { return JSON.stringify(JSON.parse(v), null, 1); } catch (e) { return v; }
+}
+
+function detail(i) {
+  const d = $(".detail")._data; if (!d) return;
+  const x = d.spans[i], s = d.summary || {};
+  document.querySelectorAll(".spans .span").forEach(e => e.classList.toggle("hl", e.dataset.i === String(i)));
+  let h = "";
+  if (x.kind === "llm") {
+    const t = x.tokens || {};
+    h = `<span class="k">span</span>  ${esc(x.label)}\n<span class="k">model requested</span>  ${esc(x.model)} · ${(t.input_tokens || 0).toLocaleString()} tokens in, ${(t.output_tokens || 0).toLocaleString()} out\n` +
+        `<span class="k">it was given</span><span class="code">${esc((x.input || "").slice(-600))}</span><span class="k">it answered</span><span class="code">${esc(x.output)}</span>`;
+  } else if (x.kind === "tool") {
+    h = `<span class="k">span</span>  ${esc(x.label)} · via the tool gateway, allowed by the policy\n<span class="k">asked with</span><span class="code">${esc(pretty(x.input))}</span><span class="k">got back</span><span class="code">${esc(pretty(x.output).slice(0, 900))}</span>`;
+  } else if (x.kind === "denied") {
+    const a = (x.audit || [])[0] || {};
+    h = `<span class="k">span</span>  ${esc(x.label)}\n<span class="k">who asked</span>  the digital apprentice, from sandbox ${esc(s.sandbox)}\n<span class="bad">decision  REFUSED by OpenShell</span>\n` +
+        (a.policy ? `<span class="k">policy</span>  ${esc(a.policy)} · engine ${esc(a.engine)}\n<span class="k">why</span>  ${esc(a.reason || "")}\n` : "") +
+        `<span class="k">what the customer had said</span>  “${esc(s.text)}”\n<span class="k">did that matter</span>  no. The policy checks the call, not the story.` +
+        (a.raw ? `\n<span class="k">audit record (OCSF)</span><span class="code">${esc(a.raw.replace(/^\[[\d.]+\] \[sandbox\] \[OCSF \] \[ocsf\] /, ""))}</span>` : "");
+  } else {
+    h = `<span class="k">span</span>  ${esc(x.label)}\n<span class="k">took</span>  ${secs(x.ms)}`;
+  }
+  $(".sd").innerHTML = `<div class="spandetail">${h}</div>`;
+}
+
+function deskDetail(q) {
+  document.querySelectorAll(".spans .span").forEach(e => e.classList.toggle("hl", e.classList.contains("req")));
+  const filed = q.ts ? hms(q.ts * 1000) : q.at, decided = q.decided_ts ? hms(q.decided_ts * 1000) : "";
+  $(".sd").innerHTML = `<div class="spandetail"><span class="k">request</span>  ${esc(q.id)} · ${esc(q.item)}\n<span class="k">filed</span>  ${esc(filed)} by the digital apprentice, for ${esc(q.customer)}\n` +
+    (q.status === "pending" ? `<span class="k">status</span>  waiting on the desk` :
+      `<span class="${q.status === "approved" ? "k" : "bad"}">${esc(q.status)}  ${esc(decided)} by ${esc(q.decided_by)}</span>`) +
+    `\n<span class="k">scope it would have had</span>  this request, this note, once</div>`;
+}
+
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => { filter = c.dataset.f; list(); });
+$(".rows").addEventListener("click", e => { const tr = e.target.closest(".tr"); if (tr) open(tr.dataset.id); });
+$("#reload").onclick = load;
+
+// Commands from the deck: {type: "olli:scroll", do: "open"|"span"|"desk"|"filter", ...}
+let queue = Promise.resolve();
+OlliEmbed.on("olli:scroll", (m) => { queue = queue.then(() => command(m)).catch(() => {}); });
+async function command(m) {
+  if (m.do === "filter") { filter = m.f; await load(); if (m.open) { const t = all.filter(FILTERS[filter]).find(t => !m.text || t.text.includes(m.text)); if (t) open(t.id); } return; }
+  if (m.do === "open") {
+    filter = m.filter || "today"; await load();
+    const t = all.filter(FILTERS[filter]).find(t => (!m.customer || (t.customer || "").includes(m.customer)) &&
+      (!m.status || t.status === m.status) && (!m.text || t.text.includes(m.text)));
+    if (t) await open(t.id);
+    return;
+  }
+  const d = $(".detail")._data; if (!d) return;
+  if (m.do === "span") {
+    const i = d.spans.findIndex(x => (!m.kind || x.kind === m.kind) && (!m.tool || x.tool === m.tool));
+    const j = i >= 0 ? i : d.spans.findIndex(x => x.kind === "tool" || x.kind === "denied");
+    if (j >= 0) detail(j);
+  }
+  if (m.do === "desk" && (d.requests || []).length) deskDetail(d.requests[d.requests.length - 1]);
+}
+load(); setInterval(() => { if (!OlliEmbed.embedded) load(); }, 15000);
+</script>
+</body>
+</html>

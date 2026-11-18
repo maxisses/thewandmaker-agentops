@@ -1,0 +1,32 @@
+# The shop image, built on the cluster from apps/shop (binary build: oc start-build --from-dir).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ollivanders
+  labels:
+    olli.dev/part: shop
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: shop
+  namespace: ollivanders
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: shop
+  namespace: ollivanders
+spec:
+  runPolicy: Serial
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: shop:latest
+  triggers: []

@@ -1,0 +1,37 @@
+# NeMo Guardrails server from OpenShift AI (TrustyAI operator), two releases of the apprentice's
+# rails side by side. The config maps are written by install.sh from ./rails:
+#   rails-1-5    release 1.5   (config_id release-1-5)   the name is hidden when written as a name
+#   rails-1-5-1  release 1.5.1 (config_id release-1-5-1)  ... and when it is spelled out letter by letter
+# The model gateway picks the release (RAILS_CONFIG), and the red-team campaign can test either.
+apiVersion: trustyai.opendatahub.io/v1alpha1
+kind: NemoGuardrails
+metadata:
+  name: rails
+  namespace: ollivanders
+spec:
+  replicas: 1
+  nemoConfigs:
+    - name: release-1-5
+      configMaps: [rails-1-5]
+    - name: release-1-5-1
+      configMaps: [rails-1-5-1]
+      default: true
+  env:
+    - name: OPENAI_API_KEY
+      valueFrom: {secretKeyRef: {name: maas-key, key: OPENAI_API_KEY}}
+---
+# The operator also creates a public route for the rails server. The rails call the model with our
+# MaaS key, so only pods in this namespace (the model gateway, the campaign) may reach them; the
+# route stays, but the router can't get through.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: rails-in-namespace-only
+  namespace: ollivanders
+spec:
+  podSelector:
+    matchLabels: {app: rails}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}

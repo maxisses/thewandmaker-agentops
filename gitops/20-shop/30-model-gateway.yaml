@@ -1,0 +1,46 @@
+# model-gateway: between OpenShell's inference route and Red Hat MaaS. Switches off Qwen's
+# thinking phase on every chat request and runs the apprentice's rails (NeMo Guardrails) on what
+# goes in and what comes out. Holds no MaaS key; OpenShell injects it and we pass it on.
+# The upstream URL comes from the configmap model-gateway, written by install.sh from .env.
+# The backup oracle (OpenRouter) has its own key, in the secret oracle-backup.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-gateway
+  namespace: ollivanders
+  labels: {app: model-gateway}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"shop:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"model-gateway\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: model-gateway}
+  template:
+    metadata:
+      labels: {app: model-gateway}
+    spec:
+      containers:
+        - name: model-gateway
+          image: image-registry.openshift-image-registry.svc:5000/ollivanders/shop:latest
+          command: ["python", "-m", "shop.modelgw"]
+          ports:
+            - {name: http, containerPort: 8080}
+          envFrom:
+            - configMapRef: {name: model-gateway}
+            # the backup oracle's key, for this container only (backup-oracle.sh); without it, MaaS only
+            - secretRef: {name: oracle-backup, optional: true}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {memory: 384Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-gateway
+  namespace: ollivanders
+spec:
+  selector: {app: model-gateway}
+  ports:
+    - {name: http, port: 8080, targetPort: http}

@@ -1,0 +1,50 @@
+# shop-tools: catalogue, notebooks, reservations and the cabinet, as an MCP server.
+# The secret shop-tokens is created by gitops/20-shop/install.sh (random values, never in git).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-tools
+  namespace: ollivanders
+  labels: {app: shop-tools}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"shop:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"shop-tools\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: shop-tools}
+  template:
+    metadata:
+      labels: {app: shop-tools}
+    spec:
+      containers:
+        - name: shop-tools
+          image: image-registry.openshift-image-registry.svc:5000/ollivanders/shop:latest
+          command: ["python", "-m", "shop.tools"]
+          ports:
+            - {name: http, containerPort: 8080}
+          env:
+            - name: SHOP_TOOLS_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-tokens, key: tools}}
+            - name: SHOP_DESK_TOKEN
+              valueFrom: {secretKeyRef: {name: shop-tokens, key: desk}}
+            - {name: SHOP_STATE_FILE, value: /data/state.json}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 512Mi}
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-tools
+  namespace: ollivanders
+spec:
+  selector: {app: shop-tools}
+  ports:
+    - {name: http, port: 8080, targetPort: http}

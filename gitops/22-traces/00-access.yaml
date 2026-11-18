@@ -1,0 +1,55 @@
+# Who may write and read traces in the MLflow workspace "ollivanders" (= this namespace).
+# MLflow on OpenShift AI checks Kubernetes RBAC on mlflow.kubeflow.org/experiments.
+# The OpenTelemetry collector writes with this account's token; the shop's scroll page reads with it.
+# The apprentice never gets the token: it sends its spans to the collector, which adds it.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scribe
+  namespace: ollivanders
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scribe-mlflow
+  namespace: ollivanders
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mlflow-operator-mlflow-integration
+subjects:
+  - kind: ServiceAccount
+    name: scribe
+    namespace: ollivanders
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scribe-mlflow-view
+  namespace: ollivanders
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mlflow-operator-mlflow-view
+subjects:
+  - kind: ServiceAccount
+    name: scribe
+    namespace: ollivanders
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scribe-token
+  namespace: ollivanders
+  annotations:
+    kubernetes.io/service-account.name: scribe
+type: kubernetes.io/service-account-token
+---
+# The service CA, so the collector and the shop trust MLflow's service certificate.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-ca
+  namespace: ollivanders
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"

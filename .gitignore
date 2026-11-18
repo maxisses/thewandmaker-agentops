@@ -1,0 +1,29 @@
+# Secrets and anything that belongs to one machine or one cluster
+.env
+.env.*
+!.env.example
+local/
+deck/js/config.local.js
+infra/context.json
+
+# Terraform
+.terraform/
+*.tfstate*
+*.tfplan
+
+# Third-party checkout, fetched by "make vendor" at a pinned commit
+vendor/
+
+# Generated media: raw shots and sounds, renders, picture sources, tool caches
+film/generated/
+film/renders/
+film/.hyperframes/
+deck/assets/img/scenes/src/
+deck/assets/video/intro-flat-first-cut.mp4
+
+# Build output and clutter
+*.zip
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store

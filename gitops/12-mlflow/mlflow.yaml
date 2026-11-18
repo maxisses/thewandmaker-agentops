@@ -1,0 +1,24 @@
+# The MLflow tracking server of OpenShift AI 3.5 (MLflow 3.14). Cluster-scoped, the name must be
+# "mlflow". The operator runs it in redhat-ods-applications with Kubernetes token auth; every
+# namespace is an MLflow workspace (header X-MLflow-Workspace). Our traces go to workspace
+# "ollivanders", experiment "apprentice".
+apiVersion: mlflow.opendatahub.io/v1
+kind: MLflow
+metadata:
+  name: mlflow
+spec:
+  replicas: 1
+  backendStoreUri: sqlite:////mlflow/mlflow.db
+  serveArtifacts: true
+  artifactsDestination: file:///mlflow/artifacts
+  storage:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 4Gi

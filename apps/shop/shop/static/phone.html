@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Wand Shop</title>
+<link rel="stylesheet" href="/static/shop.css?v=3">
+</head>
+<body class="phonepage chatonly">
+<!-- The audience's page: a plain chat with the digital apprentice, under a wizard's name the shop
+     hands out. What to try is said on stage, not here. -->
+<main>
+  <header class="phead">
+    <h1>The Wand Shop</h1>
+    <p class="me">You are <b id="me">…</b></p>
+  </header>
+  <div id="log" class="plog">
+    <div class="pm app"><span class="who">Digital apprentice</span><p>Good day. How may the shop help you?</p></div>
+  </div>
+  <form id="f" class="psend">
+    <textarea id="t" rows="2" maxlength="500" placeholder="Say something…"></textarea>
+    <button type="submit" class="big">Send</button>
+  </form>
+  <p class="foot">A demo for the talk “Operate your agents – safely!”. Please don't type anything personal.</p>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+let phone;
+try { phone = localStorage.getItem("phone"); if (!phone) { phone = Math.random().toString(36).slice(2, 12); localStorage.setItem("phone", phone); } }
+catch (e) { phone = Math.random().toString(36).slice(2, 12); }
+const label = n => n.replace(/^shop_/, "").replace(/_/g, " ");
+// The answer arrives in one piece (the rails must see all of it before it leaves the gateway).
+// On screen it then appears word by word: about 35 ms a word, three seconds at most for a long
+// answer. Always as text, never as HTML: it is model output.
+function reveal(el, text, scroll) {
+  const words = String(text).split(/(\s+)/);
+  const gap = Math.min(35, 3000 / Math.max(1, words.length / 2));
+  el.textContent = "";
+  return new Promise((done) => {
+    let i = 0;
+    (function step() {
+      if (i >= words.length) { el.textContent = text; scroll(); return done(); }
+      el.textContent += words[i++] + (words[i] !== undefined ? words[i++] : "");
+      scroll();
+      setTimeout(step, gap);
+    })();
+  });
+}
+const post = (path, body) => fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+let me = "You";
+const log = $("#log");
+
+function add(cls, who, html) {
+  const d = document.createElement("div");
+  d.className = "pm " + cls;
+  d.innerHTML = `<span class="who">${esc(who)}</span>${html}`;
+  log.appendChild(d);
+  d.scrollIntoView({ block: "end" });
+  return d;
+}
+async function hello() {
+  try { me = (await post("/api/phone/hello", { phone })).name || me; } catch (e) {}
+  $("#me").textContent = me;
+}
+async function say(text) {
+  add("me", me, `<p>${esc(text)}</p>`);
+  const a = add("app wait", "Digital apprentice", `<p>…</p>`);
+  const p = a.querySelector("p");
+  $("#f button").disabled = true;
+  let t;
+  try { t = await post("/api/phone/ask", { phone, text }); }
+  catch (e) { p.textContent = "The shop door is stuck. Try again in a moment."; $("#f button").disabled = false; return; }
+  for (;;) {
+    if (t.status === "waiting") p.textContent = t.ahead ? `Waiting outside. ${t.ahead} ahead of you.` : "You're next. The door opens…";
+    if (t.status === "working") p.textContent = "The digital apprentice is with you…";
+    if (t.status === "done" || t.error) break;
+    await new Promise(r => setTimeout(r, 2000));
+    try { t = await (await fetch("/api/phone/ticket/" + t.id)).json(); } catch (e) {}
+  }
+  a.classList.remove("wait");
+  const denied = new Set((t.denied || []).map(x => x.tool));
+  a.innerHTML = `<span class="who">Digital apprentice · ${esc(t.seconds)} s</span><p></p>`;
+  if (t.reply) await reveal(a.querySelector("p"), t.reply, () => a.scrollIntoView({ block: "end" }));
+  else a.querySelector("p").textContent = "The shop is too busy for a moment. Try again.";
+  let h = "";
+  if (t.wand) h += `<div class="card"><b>${esc(t.wand.wand)}</b>${esc(t.wand.wand_id)} · reserved for you, ${esc(t.wand.id)}</div>`;
+  const steps = (t.tools || []).filter(n => !denied.has(n)).map(n => `<span class="step ok">${label(n)}</span>`).join("") +
+    [...denied].map(n => `<span class="step no">${label(n)} · refused by the lock</span>`).join("");
+  if (steps) h += `<div class="steps">${steps}</div>`;
+  a.insertAdjacentHTML("beforeend", h);
+  a.scrollIntoView({ block: "end" });
+  $("#f button").disabled = false;
+}
+function send() { const v = $("#t").value.trim(); if (v && !$("#f button").disabled) { $("#t").value = ""; say(v); } }
+$("#f").onsubmit = (e) => { e.preventDefault(); send(); };
+$("#t").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+hello();
+</script>
+</body>
+</html>

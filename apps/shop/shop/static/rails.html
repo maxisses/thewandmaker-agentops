@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The digital apprentice's rails</title>
+<link rel="stylesheet" href="/static/shop.css?v=4">
+</head>
+<body>
+<header>
+  <h1>The digital apprentice's rails</h1><span class="sub">NeMo Guardrails, in the model path</span>
+  <div class="right"><button id="reset" title="Counters back to zero">Reset counters</button></div>
+</header>
+<main>
+  <div class="rails">
+    <div class="release"></div>
+    <div id="list"><p class="empty">Reading the rails…</p></div>
+    <h2>Last time a rail stepped in</h2>
+    <div id="events"><p class="empty">Not yet.</p></div>
+  </div>
+  <!-- The close-up the deck asks for at the end of demo 3: the last answer a rail changed, large,
+       what the apprentice wrote above what the customer got. -->
+  <div id="focus" hidden></div>
+</main>
+<script src="/static/embed.js"></script>
+<script>
+let key = new URLSearchParams(location.hash.slice(1)).get("key");
+try { if (key) sessionStorage.setItem("deskKey", key); else key = sessionStorage.getItem("deskKey"); } catch (e) {}
+if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+const H = () => ({ "x-desk-token": key || "", "content-type": "application/json" });
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const last = {};
+let focusOn = null, data = null;      // focusOn: the rail whose last change is shown large, or null
+const WHERE = { in: "customer line stopped before the model saw it", out: "answer changed on its way out" };
+// What each counter is in the rails' own configuration (gitops/23-guardrails/rails/config.yaml).
+const HOW = { en: "output rail · check english", topic: "input rail · self check input", name: "output rail · check name" };
+// Even this view never prints the name: what a rail caught is shown blacked out.
+const NAME = /(lord\s+)?(voldemort|tom\s+(marvolo\s+)?riddle|marvolo|\bRiddle\b)/gi;
+// The same, as HTML: the blacked-out name as a bar, the rail's replacement marked.
+function shown(s, mark) {
+  let h = esc(strip(s).slice(0, 520)).replace(/█+/g, '<span class="bar"></span>');
+  if (mark) h = h.replace(/You-Know-Who/g, "<mark>You-Know-Who</mark>");
+  return h;
+}
+function focus() {
+  const box = document.getElementById("focus");
+  if (!focusOn) { box.hidden = true; return; }
+  const e = data && ((data.events || []).find(x => x.rail === focusOn) || (data.events || [])[0]);
+  const rail = e && (data.rails.find(r => r.id === e.rail) || {});
+  box.hidden = false;
+  box.innerHTML = e ? `<div class="fh">${esc(rail.name || e.rail)} <small>${esc(HOW[e.rail] || "")}</small></div>
+    <div class="fl">what the digital apprentice wrote</div><div class="was">${shown(e.before)}</div>
+    <div class="fl">what the customer got</div><div class="now">${shown(e.after, true)}</div>`
+    : `<div class="fh">No rail has stepped in yet.</div>`;
+}
+function strip(s) { return String(s || "").replace(/^\[[^\]]*\d\d:\d\d[^\]]*\]\s*/, "").replace(/^\[customer: [^\]]*\]\s*/, "").replace(NAME, "█████"); }
+
+async function load() {
+  let d;
+  try {
+    const r = await fetch("/api/rails", { headers: H() });
+    if (r.status === 401) { document.getElementById("list").innerHTML = `<p class="empty">The wand maker's view. Open it with /rails#key=…</p>`; return; }
+    d = await r.json();
+  } catch (e) { return; }
+  data = d;
+  focus();
+  document.querySelector(".release").textContent = d.enabled ? "NeMo Guardrails · rails release " + d.config.replace(/^release-/, "").replace(/-/g, ".") : "rails switched off";
+  document.getElementById("list").innerHTML = d.rails.map(x => {
+    const ev = (d.events || []).find(e => e.rail === x.id);
+    const hit = last[x.id] !== undefined && x.count > last[x.id];
+    last[x.id] = x.count;
+    return `<div class="rail ${hit ? "hit" : ""}"><div class="nm">${esc(x.name)}</div><div class="how">${esc(HOW[x.id] || "")}</div><div class="ct">${x.count}</div>
+      <div class="last">${ev ? esc(WHERE[ev.where] || "") : "not triggered yet"}</div></div>`;
+  }).join("");
+  const evs = (d.events || []).slice(0, 4);
+  document.getElementById("events").innerHTML = evs.length ? evs.map(e => `
+    <div class="ev"><div class="meta">${new Date(e.at * 1000).toLocaleTimeString("en-GB")} · ${esc(d.rails.find(r => r.id === e.rail)?.name || e.rail)}</div>
+      <div class="was">${esc(strip(e.before).slice(0, 220))}</div><div class="now">→ ${esc(strip(e.after).slice(0, 220))}</div></div>`).join("")
+    : `<p class="empty">Not yet.</p>`;
+}
+document.getElementById("reset").onclick = async () => { await fetch("/api/rails/reset", { method: "POST", headers: H(), body: "{}" }); for (const k in last) delete last[k]; load(); };
+OlliEmbed.on("olli:rails-reset", async () => { await fetch("/api/rails/reset", { method: "POST", headers: H(), body: "{}" }); for (const k in last) delete last[k]; load(); });
+// The deck: {type: "olli:rails-focus", on: true, rail: "name"} shows the close-up, on: false hides it.
+OlliEmbed.on("olli:rails-focus", (m) => { focusOn = m.on ? String(m.rail || "name") : null; focus(); });
+load(); setInterval(load, 1500);
+</script>
+</body>
+</html>

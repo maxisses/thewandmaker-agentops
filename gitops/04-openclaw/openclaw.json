@@ -1,0 +1,94 @@
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "shop": {
+        "baseUrl": "https://inference.local/v1",
+        "apiKey": "unused-the-gateway-injects-the-real-key",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "oracle",
+            "name": "Oracle, through the model gateway",
+            "contextWindow": 131072,
+            "maxTokens": 8192,
+            "compat": {
+              "thinkingFormat": "qwen-chat-template",
+              "supportsReasoningEffort": false
+            },
+            "params": {
+              "chat_template_kwargs": {
+                "enable_thinking": false
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "shop/oracle"
+      },
+      "thinkingDefault": "off",
+      "skills": []
+    }
+  },
+  "tools": {
+    "profile": "minimal",
+    "alsoAllow": [
+      "shop__*"
+    ]
+  },
+  "skills": {
+    "allowBundled": []
+  },
+  "plugins": {
+    "load": {
+      "paths": [
+        "/usr/local/lib/olli/.openclaw/extensions/diagnostics-otel"
+      ]
+    },
+    "entries": {
+      "diagnostics-otel": {
+        "enabled": true
+      }
+    }
+  },
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "http://otel-collector.ollivanders.svc:4318",
+      "protocol": "http/protobuf",
+      "serviceName": "apprentice",
+      "traces": true,
+      "metrics": false,
+      "logs": false,
+      "sampleRate": 1.0,
+      "captureContent": true
+    }
+  },
+  "mcp": {
+    "sessionIdleTtlMs": 120000
+  },
+  "gateway": {
+    "mode": "local",
+    "port": 18789,
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "__GATEWAY_TOKEN__"
+    },
+    "controlUi": {
+      "enabled": true,
+      "environment": {
+        "label": "__APPRENTICE__",
+        "color": "amber"
+      },
+      "communityInvite": false,
+      "automaticallyFetchFavicons": false
+    }
+  }
+}

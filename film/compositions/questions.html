@@ -1,0 +1,38 @@
+<template>
+  <style>
+    @font-face { font-family: "Red Hat Display"; src: url("assets/fonts/RedHatDisplay.ttf") format("truetype"); font-weight: 300 900; }
+    @font-face { font-family: "Red Hat Text"; src: url("assets/fonts/RedHatText.ttf") format("truetype"); font-weight: 300 700; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(180deg, #fff 0, #fff 65%, #e3f4f4 65%, #e3f4f4 100%); font-family: "Red Hat Display", sans-serif; color: #151515; }
+    .ln { position: absolute; left: 150px; font-weight: 800; font-size: 84px; line-height: 1.06; letter-spacing: -0.02em; width: 900px; opacity: 0; }
+    .sub { position: absolute; left: 150px; font-family: "Red Hat Text", sans-serif; font-weight: 500; font-size: 44px; line-height: 1.25; color: #4d4d4d; width: 900px; opacity: 0; }
+
+    #qs-stop { top: 130px; font-size: 110px; font-weight: 900; width: 1400px; }
+    .qs-q { position: absolute; left: 150px; font-weight: 800; font-size: 96px; letter-spacing: -0.02em; line-height: 1; white-space: nowrap; opacity: 0; }
+    .qs-q b { color: #ee0000; font-weight: 900; margin-right: 44px; }
+  </style>
+  <div id="root" data-composition-id="questions" data-width="1920" data-height="1080">
+    <div class="ln" id="qs-stop">And then he stopped.</div>
+    <div class="qs-q" id="qs-q0" style="top:330px"><b>1</b>Can I limit what it can do?</div>
+    <div class="qs-q" id="qs-q1" style="top:480px"><b>2</b>Can I see what it did?</div>
+    <div class="qs-q" id="qs-q2" style="top:630px"><b>3</b>Can I trust it to ship?</div>
+    <div class="qs-q" id="qs-q3" style="top:780px"><b>4</b>Can it handle the Hogwarts rush?</div>
+
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#qs-stop", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0.3);
+      tl.fromTo("#qs-q0", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.22, ease: "power4.out" }, 2.6);
+      tl.fromTo("#qs-q0", { color: "#151515" }, { color: "#8a8d90", duration: 0.3, immediateRender: false }, 4.7);
+      tl.fromTo("#qs-q1", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.22, ease: "power4.out" }, 4.800000000000001);
+      tl.fromTo("#qs-q1", { color: "#151515" }, { color: "#8a8d90", duration: 0.3, immediateRender: false }, 6.9);
+      tl.fromTo("#qs-q2", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.22, ease: "power4.out" }, 7.0);
+      tl.fromTo("#qs-q2", { color: "#151515" }, { color: "#8a8d90", duration: 0.3, immediateRender: false }, 9.1);
+      tl.fromTo("#qs-q3", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.22, ease: "power4.out" }, 9.200000000000001);
+      for (let i = 0; i < 3; i++) tl.fromTo("#qs-q" + i, { color: "#8a8d90" }, { color: "#151515", duration: 0.3, immediateRender: false }, 11.0);
+      tl.fromTo("#root", { opacity: 1 }, { opacity: 0, duration: 0.25, ease: "power2.in", immediateRender: false }, 13.2);
+      tl.set({}, {}, 13.5);
+      window.__timelines["questions"] = tl;
+    })();
+  </script>
+</template>

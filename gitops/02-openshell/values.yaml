@@ -1,0 +1,22 @@
+# Helm values for oci://ghcr.io/nvidia/openshell/helm-chart 0.0.116 with the Red Hat
+# (Open Data Hub) gateway and supervisor images. The route hostname is added by install.sh,
+# because it depends on the cluster's apps domain.
+image:
+  repository: quay.io/opendatahub/odh-openshell-gateway
+  tag: v0.0.116-rhaiv.0
+
+supervisor:
+  image:
+    repository: quay.io/opendatahub/odh-openshell-supervisor
+    tag: v0.0.116-rhaiv.0
+
+# Let OpenShift's restricted-v2 SCC pick the UID and fsGroup for the gateway.
+podSecurityContext:
+  fsGroup: null
+securityContext:
+  runAsUser: null
+
+server:
+  auth:
+    # Single-user demo cluster. Every request counts as the local developer.
+    allowUnauthenticatedUsers: true

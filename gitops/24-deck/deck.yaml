@@ -1,0 +1,75 @@
+# The deck, served from the cluster over HTTPS. A static site: Apache httpd with the deck's files,
+# built on the cluster from a staged copy of deck/ (binary build: install.sh).
+# Open to everyone as the scripted deck. It runs live only for who opens it with the desk key in the
+# link (…/#key=…); the key is in no file of the image.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: deck
+  namespace: ollivanders
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: deck
+  namespace: ollivanders
+spec:
+  runPolicy: Serial
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: deck:latest
+  triggers: []
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deck
+  namespace: ollivanders
+  labels: {app: deck}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"deck:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"deck\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: deck}
+  template:
+    metadata:
+      labels: {app: deck}
+    spec:
+      containers:
+        - name: deck
+          image: image-registry.openshift-image-registry.svc:5000/ollivanders/deck:latest
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            httpGet: {path: /index.html, port: http}
+          resources:
+            requests: {cpu: 10m, memory: 64Mi}
+            limits: {memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deck
+  namespace: ollivanders
+spec:
+  selector: {app: deck}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: deck
+  namespace: ollivanders
+spec:
+  to: {kind: Service, name: deck}
+  port: {targetPort: http}
+  tls: {termination: edge, insecureEdgeTerminationPolicy: Redirect}

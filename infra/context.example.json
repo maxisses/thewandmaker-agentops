@@ -1,0 +1,8 @@
+{
+  "project": "olli-demo",
+  "account_id": "000000000000",
+  "region": "eu-central-1",
+  "availability_zone": "eu-central-1c",
+  "cluster": "your-cluster-name",
+  "cluster_source": "created by make up (Terraform), or pre-provisioned; say which"
+}

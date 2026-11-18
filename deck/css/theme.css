@@ -1,0 +1,237 @@
+/* Theme: the wand shop. Dark wood and candlelight for the story slides, aged parchment for the
+   working slides, gold lettering, old serif type. Loaded after deck.css and only restyles it.
+   Display faces Big Caslon and Luminari ship with macOS; EB Garamond is bundled. */
+
+@font-face { font-family: "EB Garamond"; src: url("../assets/fonts/EBGaramond-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "EB Garamond"; src: url("../assets/fonts/EBGaramond-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+
+:root {
+  --ink: #2b1d12;
+  --red: #b3202a;
+  --red-l: #e2574c;
+  --teal: #efe2bb;
+  --teal-d: #1f5a50;
+  --grey: #b9a67c;
+  --mid: #6b5a43;
+  --soft: #eadbb4;
+  --paper: #f3e7ca;
+  --card: #fbf4df;
+  --on-dark: #f6ecd2;
+  --tint: rgba(201, 162, 74, .16);
+  --ok: #2f6b3a;
+  --gold: #c9a24a;
+  --gold-l: #ecd28a;
+  --wood: #17100b;
+  --wood-2: #2a1b10;
+  --display: "EB Garamond", "Cormorant Garamond", Baskerville, Georgia, serif;
+  --title: "Big Caslon", "Cormorant Garamond", "EB Garamond", Baskerville, serif;
+  --script: "Luminari", "Apple Chancery", "Big Caslon", serif;
+  --text: "EB Garamond", Baskerville, Georgia, serif;
+}
+
+/* ---------- parchment (working slides) ---------- */
+#stage {
+  font-size: 38px; line-height: 1.26;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(120, 78, 28, .26) 100%),
+    radial-gradient(520px 300px at 14% 88%, rgba(150, 100, 40, .12), transparent 70%),
+    radial-gradient(420px 260px at 90% 10%, rgba(150, 100, 40, .10), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.3 0 0 0 0 0.12 0 0 0 0.11 0'/%3E%3C/filter%3E%3Crect width='320' height='320' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+#s-film { background: #000; }
+#s-film video { background: #000; }
+
+h1, h2, h3 { font-family: var(--title); font-weight: 500; letter-spacing: 0; }
+h1 { font-size: 128px; line-height: 1.02; }
+h2 { font-size: 84px; line-height: 1.04; }
+.kicker, .chapter .no, .arch-kicker { font-family: var(--display); font-weight: 700; letter-spacing: 0.24em; color: var(--red); }
+.lead { font-size: 46px; }
+.mono { font-size: .82em; }
+
+/* ---------- dark wood and candlelight (story slides) ---------- */
+.slide.band {
+  color: var(--on-dark);
+  background:
+    radial-gradient(980px 660px at 74% 58%, rgba(244, 190, 90, .17), transparent 62%),
+    radial-gradient(700px 420px at 6% 2%, rgba(170, 86, 30, .20), transparent 70%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .024) 0 2px, transparent 2px 9px, rgba(0, 0, 0, .22) 9px 11px, transparent 11px 163px),
+    linear-gradient(180deg, #1d140c, #120b07);
+  box-shadow: inset 0 0 280px rgba(0, 0, 0, .8);
+}
+.slide.band::before { display: none; }
+.slide.band h1, .slide.band h2 { color: var(--gold-l); text-shadow: 0 3px 0 rgba(0, 0, 0, .55), 0 0 44px rgba(236, 190, 90, .22); }
+.slide.band .kicker, .slide.band .no { color: var(--gold); }
+.slide.band .muted, .slide.band .who { color: #cdbb90; }
+.slide.band .red { color: var(--red-l); }
+.slide.band .mono { color: var(--gold-l); }
+/* a thin gold frame, like a picture rail, on every story slide */
+.slide.band::after { content: ""; position: absolute; inset: 26px; border: 2px solid rgba(201, 162, 74, .45); outline: 1px solid rgba(201, 162, 74, .22); outline-offset: 8px; pointer-events: none; z-index: 0; }
+
+/* the shop sign */
+#s-curtain { align-items: center; text-align: center; }
+#s-curtain .crest { width: 150px; height: 170px; margin-bottom: 26px; }
+.signboard { padding: 44px 110px 40px; border-top: 12px solid #0b0705; border-bottom: 12px solid #0b0705; position: relative;
+  background: linear-gradient(180deg, #0f0906, #17100b 50%, #0d0805), #0f0906; box-shadow: 0 0 0 2px rgba(201, 162, 74, .5), 0 26px 60px rgba(0, 0, 0, .7); }
+#s-curtain .sign { font-family: var(--title); font-weight: 500; font-size: 176px; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1;
+  background: linear-gradient(180deg, #f6e3a6, #d0a94f 55%, #9a7630); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .7)); }
+#s-curtain .since { font-family: var(--text); font-style: italic; font-size: 46px; letter-spacing: 0.06em; color: var(--gold); margin-top: 18px; }
+#s-curtain .hiring { margin-top: 54px; font-family: var(--script); font-size: 46px; color: var(--ink); background: var(--card); padding: 12px 34px 8px; transform: rotate(-3deg);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, .6); border: 1px solid #cbb780; }
+
+/* title */
+#s-title .logo { height: 86px; background: var(--card); padding: 16px 26px; border-radius: 6px; box-shadow: 0 0 0 2px var(--gold), 0 14px 30px rgba(0, 0, 0, .55); margin-bottom: 64px; }
+#s-title h1 { font-size: 150px; }
+
+/* the four questions */
+#s-questions .qq { font-family: var(--title); font-weight: 500; letter-spacing: 0; color: var(--on-dark); font-size: 84px; padding-left: 130px; }
+#s-questions .qq i { font-family: var(--script); font-weight: 400; color: var(--gold); font-size: 84px; }
+
+/* chapter cards */
+.chapter h1 { font-size: 110px; }
+.chapter .story { font-size: 46px; color: var(--on-dark); font-style: italic; }
+.chapter .art svg { right: -30px; bottom: -70px; filter: drop-shadow(0 30px 50px rgba(0, 0, 0, .6)); }
+.rules { background: var(--card); color: var(--ink); border: 1px solid #cbb780; border-radius: 4px; box-shadow: 0 26px 60px rgba(0, 0, 0, .65); font-size: 31px; transform: rotate(1.4deg); }
+.rules .hd { font-family: var(--script); font-weight: 400; font-size: 44px; border-bottom: 2px solid var(--ink); }
+.rules li::before { font-family: var(--script); font-weight: 400; color: var(--red); font-size: 38px; }
+.rules li { border-bottom: 1px dashed #cbb780; }
+
+/* ---------- architecture, drawn on parchment ---------- */
+.arch .lbl { font-family: var(--display); font-weight: 700; font-size: 27px; }
+.arch .sub { font-family: var(--text); font-style: italic; font-size: 20px; }
+.arch .box rect { stroke-width: 3; }
+.arch .box.soft rect { fill: var(--wood-2); stroke: none; }
+.arch .box.soft .lbl { fill: var(--gold-l); letter-spacing: 0.1em; }
+.arch .box.inkbox rect { fill: var(--wood-2); }
+.arch .box.inkbox .lbl { fill: var(--gold-l); }
+.arch .box.inkbox .sub { fill: #cdbb90; }
+.arch .key { stroke: #8a6a22; }
+.arch .new.box.soft rect { fill: var(--card); }
+.arch-kicker { font-size: 32px; }
+
+/* ---------- panels: framed ledgers ---------- */
+.panel { border-radius: 8px; box-shadow: 0 14px 34px rgba(60, 35, 10, .28); }
+.panel > header { background: linear-gradient(180deg, #24170e, #17100b); color: var(--gold-l); font-family: var(--title); font-weight: 500; font-size: 31px; letter-spacing: 0.04em; border-bottom: 2px solid var(--gold); }
+.panel > header small { font-family: var(--text); font-style: italic; font-size: 23px; color: #cdbb90; }
+.panel > header .right { color: #a89468; }
+.panel > header .dot { background: var(--red-l); box-shadow: 0 0 12px var(--red-l); }
+
+.msg { font-family: var(--text); font-size: 30px; line-height: 1.26; }
+.msg.cust { background: #3a2717; }
+.msg.cust.boy { background: #5a4634; }
+.msg.app { border-left: 5px solid var(--gold); }
+.msg .name { font-family: var(--display); font-weight: 700; }
+.chat-input input { font: 400 27px var(--text); }
+.chat-input .who { font-family: var(--display); font-weight: 700; font-size: 21px; }
+.divider { font-family: var(--text); font-style: italic; font-size: 22px; }
+
+.desk h4 { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: 0.18em; }
+.desk .row { font-size: 25px; }
+.desk .empty { font-style: italic; font-size: 24px; }
+.req { border-radius: 6px; }
+.req .ttl { font-family: var(--display); font-weight: 700; font-size: 29px; }
+.req dl { font-size: 23px; }
+.btn { font-family: var(--display); font-weight: 700; font-size: 25px; border-radius: 6px; }
+.btn.danger { box-shadow: 0 3px 0 #6e1218; }
+
+.trace .tr .who { font-family: var(--text); font-size: 22px; }
+.trace .list .hd { font-family: var(--display); font-weight: 700; }
+.trace .detail h5 { font-family: var(--title); font-weight: 500; font-size: 34px; }
+.trace .count { font-family: var(--title); font-weight: 500; font-size: 30px; }
+.trace .chip.on { background: rgba(179, 32, 42, .08); }
+
+.rail { border: 1px solid #d8c693; }
+.rail .nm { font-family: var(--title); font-weight: 500; font-size: 44px; letter-spacing: 0; }
+.rail .ct { font-family: var(--title); font-weight: 500; }
+.rail .last { font-family: var(--text); font-style: italic; font-size: 25px; }
+.rail.hit { background: var(--wood-2); border-color: var(--gold); }
+.rail.hit .nm { color: var(--gold-l); }
+.rail.hit .ct { color: var(--red-l); }
+
+.camp .rel { font-family: var(--title); font-weight: 500; font-size: 40px; letter-spacing: 0; }
+.atk .q { font-family: var(--text); font-size: 24px; }
+.rule { font-size: 25px; }
+.rule.hd { font-family: var(--display); font-weight: 700; }
+.rule .n { font-family: var(--script); font-weight: 400; }
+.gate { font-family: var(--title); font-weight: 500; font-size: 30px; border-radius: 6px; }
+.leak { font-family: var(--text); font-size: 23px; }
+
+.ctr { border: 1px solid #d8c693; border-radius: 8px; }
+.ctr .v { font-family: var(--title); font-weight: 500; letter-spacing: 0; }
+.ctr .l { font-style: italic; font-size: 28px; }
+.ctr.ink { background: var(--wood-2); border-color: var(--gold); }
+.ctr.ink .v { color: var(--gold-l); }
+.ctr.ink .l { color: #cdbb90; }
+.phone { border-color: var(--ink); background: var(--card); }
+.phone .shop { font-family: var(--title); font-weight: 500; font-size: 34px; letter-spacing: 0.06em; text-transform: uppercase; }
+.phone .tap { font-family: var(--display); font-weight: 700; border-radius: 6px; }
+.phone .card b { font-family: var(--title); font-weight: 500; font-size: 30px; }
+
+/* inside OpenShell */
+.code, .pol-card { background: #1b130d; box-shadow: 0 10px 26px rgba(60, 35, 10, .3); }
+.code .k, .pol-card .k { color: var(--gold-l); }
+.code .s, .pol-card .s { color: #b9d48a; }
+.code .n, .pol-card .n { color: #f0a25e; }
+.code .c, .pol-card .c { color: #a89468; }
+.pol-card h6 { color: var(--gold); }
+.shelltag { font-family: var(--title); font-weight: 500; font-size: 44px; }
+.outcomes { font-size: 38px; }
+.outcomes i { font-size: 28px; }
+.pol-h { color: var(--mid); }
+
+/* the newspaper */
+.paper { background: #f7edd2; box-shadow: 0 20px 50px rgba(60, 35, 10, .35); }
+.paper .mast .name { font-family: var(--script); font-weight: 400; font-size: 82px; letter-spacing: 0; }
+.paper .ad h2 { font-family: var(--title); font-size: 92px; }
+.paper .ad .tag { font-family: var(--display); letter-spacing: 0.24em; }
+.paper .ad p { font-style: italic; font-size: 38px; }
+.paper .side .cta { font-family: var(--title); font-weight: 500; font-size: 48px; }
+.paper .photo { background: linear-gradient(180deg, #f1d89a, #c98f3d); }
+
+/* the inference stack */
+.istack { background: rgba(179, 32, 42, .05); border-radius: 12px; }
+.irow { font-family: var(--title); font-weight: 500; letter-spacing: 0; border-color: #d8c693; border-radius: 8px; }
+.irow.models i { font-family: var(--display); font-weight: 700; font-size: 28px; }
+.istat { border: 1px solid #d8c693; border-radius: 8px; font-style: italic; }
+.istat b { font-family: var(--title); font-weight: 500; font-style: normal; letter-spacing: 0; }
+.isrc { font-size: 28px; font-style: italic; }
+
+/* translation and the four answers */
+.xlate { font-size: 42px; }
+.xlate th { font-family: var(--display); font-weight: 700; letter-spacing: 0.2em; }
+.xlate td:first-child { font-family: var(--title); font-weight: 500; }
+.xlate td { border-bottom: 1px solid #d8c693; }
+.ans { border: 1px solid #d8c693; border-top: 8px solid var(--gold); border-radius: 6px; box-shadow: 0 12px 28px rgba(60, 35, 10, .2); }
+.ans.dashed { border: 3px dashed var(--mid); background: transparent; box-shadow: none; }
+.ans .hd { font-family: var(--display); font-weight: 700; letter-spacing: 0.22em; color: var(--red); }
+.ans h3 { font-family: var(--title); font-weight: 500; font-size: 40px; }
+.ans ul { font-size: 24px; }
+.ans li::before { background: var(--gold); top: 19px; }
+.ans .with { font-size: 21px; }
+.anchor { background: linear-gradient(180deg, #24170e, #17100b); color: var(--gold-l); font-family: var(--title); font-weight: 500; letter-spacing: 0.05em; border-radius: 6px; border: 1px solid var(--gold); }
+.legend { color: var(--mid); }
+
+/* small things */
+.sim { font-size: 17px; border-color: #cbb780; }
+.placeholder { background: repeating-linear-gradient(135deg, #f7edd2, #f7edd2 18px, #f1e3bf 18px, #f1e3bf 36px); border-color: #b9a67c; }
+.placeholder b { font-family: var(--display); letter-spacing: 0.2em; }
+#pager { color: rgba(120, 100, 70, .6); }
+#s-thanks h1 { font-size: 170px; }
+
+/* Numbers: Big Caslon draws old-style figures (its 1 reads as an I), so anything that counts
+   uses EB Garamond with lining figures. */
+.rail .ct, .ctr .v, .istat b, .trace .count, .rule .res, .once { font-family: var(--display); font-weight: 700; font-variant-numeric: lining-nums tabular-nums; }
+.camp .rel, .gate, .phone .card b, .req .ttl, .trace .detail h5 { font-family: var(--display); font-weight: 700; font-variant-numeric: lining-nums; }
+#stage { font-variant-numeric: lining-nums; }
+.desk .row { flex-wrap: wrap; row-gap: 2px; }
+.desk .row b { white-space: nowrap; }
+.desk .row code { flex-basis: 100%; }
+#s-title .who { color: #e3d6b6; font-size: 34px; }
+#s-thanks .speakers { display: flex; gap: 90px; margin-top: 70px; }
+#s-thanks .speakers b { display: block; font-family: var(--display); font-weight: 700; font-size: 36px; color: #e3d6b6; }
+#s-thanks .speakers span { display: block; margin-top: 8px; font-size: 24px; color: #cdbb90; }
+
+/* the close: a small sign-off, bottom left, on its own click */
+.slide .powered { position: absolute; left: 100px; bottom: 78px; z-index: 2; display: flex; align-items: center; gap: 22px; font-family: var(--text); font-style: italic; font-size: 34px; color: #e3d6b6; }
+.powered img { height: 50px; width: auto; display: block; }

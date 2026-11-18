@@ -1,0 +1,49 @@
+# OpenShell policy for the apprentice's sandbox. This is the policy on the slide, for real.
+#
+# Filesystem and Landlock are fixed when the sandbox starts. network_policies can be changed
+# on the running sandbox with "openshell policy update".
+version: 1
+
+filesystem_policy:
+  include_workdir: true          # /sandbox, where OpenClaw keeps its config and workspace
+  read_only: [/usr, /lib, /proc, /dev/urandom, /app, /etc, /var/log]
+  read_write: [/tmp, /dev/null]
+
+landlock:
+  compatibility: best_effort
+
+network_policies:
+  shop_tools:
+    name: shop tools via the tool gateway
+    endpoints:                                   # 1 which endpoints
+      - host: tool-gateway.ollivanders.svc
+        port: 8080
+        path: /mcp
+        protocol: mcp
+        enforcement: enforce
+        rules:                                   # 3 which requests
+          - allow: {method: initialize}
+          - allow: {method: notifications/initialized}
+          - allow: {method: notifications/cancelled}     # OpenClaw cancels open requests after a turn
+          - allow: {method: ping}
+          - allow: {method: tools/list}
+          - allow:
+              method: tools/call
+              tool:
+                any:
+                  - shop_catalogue_search
+                  - shop_notebook_read
+                  - shop_reserve_wand
+                  - shop_cabinet_request
+                  - shop_cabinet_request_status
+        deny_rules:
+          - {method: tools/call, tool: shop_cabinet_open}
+    binaries:                                    # 2 which binaries
+      - path: /usr/bin/node                      # OpenClaw runs on node
+  traces:
+    name: spans to the scribe (OpenTelemetry collector, chapter 2)
+    endpoints:
+      - host: otel-collector.ollivanders.svc
+        port: 4318
+    binaries:
+      - path: /usr/bin/node

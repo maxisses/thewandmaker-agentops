@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Wand Shop</title>
+<link rel="stylesheet" href="/static/shop.css?v=3">
+</head>
+<body>
+<header>
+  <h1>The Wand Shop</h1><span class="sub">fine wands, made by hand · ask the digital apprentice</span>
+  <div class="right who-pick" id="who">
+    <span>You are</span>
+    <button data-who="first-year" class="on">a first-year</button>
+    <button data-who="blond-boy">the blond boy</button>
+  </div>
+</header>
+<main>
+  <div class="log" id="log">
+    <div class="msg"><div class="who">Digital apprentice</div><div class="body">Good day. How may the shop help you?</div></div>
+  </div>
+  <form id="f">
+    <input type="text" id="t" autocomplete="off" placeholder="Ask the digital apprentice…">
+    <button type="submit" id="send">Send</button>
+  </form>
+</main>
+<script src="/static/embed.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+let who = params.get("who") || (() => { try { return localStorage.getItem("who"); } catch (e) { return null; } })() || "first-year";
+const log = document.getElementById("log"), t = document.getElementById("t"), send = document.getElementById("send");
+const names = { "first-year": "First-year", "blond-boy": "The blond boy" };
+function pick(w) {
+  who = w; try { localStorage.setItem("who", w); } catch (e) {}
+  document.querySelectorAll("#who button").forEach(b => b.classList.toggle("on", b.dataset.who === w));
+}
+document.querySelectorAll("#who button").forEach(b => b.onclick = () => pick(b.dataset.who));
+if (params.get("solo")) document.getElementById("who").style.display = "none";
+pick(who);
+
+function add(cls, whoText, text) {
+  const d = document.createElement("div"); d.className = "msg " + cls;
+  d.innerHTML = `<div class="who"></div><div class="body"></div>`;
+  d.querySelector(".who").textContent = whoText; d.querySelector(".body").textContent = text;
+  log.appendChild(d); log.scrollTop = log.scrollHeight; return d;
+}
+const label = n => n.replace(/^shop_/, "").replace(/_/g, " ");
+// The answer arrives in one piece (the rails must see all of it before it leaves the gateway).
+// On screen it then appears word by word: about 35 ms a word, three seconds at most for a long
+// answer. Always as text, never as HTML: it is model output.
+function reveal(el, text, scroll) {
+  const words = String(text).split(/(\s+)/);
+  const gap = Math.min(35, 3000 / Math.max(1, words.length / 2));
+  el.textContent = "";
+  return new Promise((done) => {
+    let i = 0;
+    (function step() {
+      if (i >= words.length) { el.textContent = text; scroll(); return done(); }
+      el.textContent += words[i++] + (words[i] !== undefined ? words[i++] : "");
+      scroll();
+      setTimeout(step, gap);
+    })();
+  });
+}
+
+// Every chat page is its own conversation, so two people (or two decks) never share one.
+// A reload starts a fresh conversation.
+const conv = Math.random().toString(36).slice(2, 10);
+// One question at a time per page. Questions from the deck queue up.
+const queue = []; let working = false;
+function ask(asWho, text) { queue.push([asWho, text]); pump(); }
+async function pump() {
+  if (working || !queue.length) return;
+  working = true; send.disabled = true;
+  const [asWho, text] = queue.shift();
+  add("me" + (asWho === "blond-boy" ? " boy" : ""), names[asWho] || "Customer", text);
+  const wait = add("", "Digital apprentice", "…"); wait.querySelector(".body").className = "body thinking";
+  try {
+    const r = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ who: asWho, text, session: asWho + "-" + conv }) });
+    const d = await r.json();
+    wait.querySelector(".body").className = "body";
+    if (d.reply) await reveal(wait.querySelector(".body"), d.reply, () => { log.scrollTop = log.scrollHeight; });
+    else wait.querySelector(".body").textContent = d.error || "…";
+    const steps = document.createElement("div"); steps.className = "steps";
+    const denied = new Set((d.denied || []).map(x => x.tool));
+    for (const n of d.tools || []) if (!denied.has(n)) steps.insertAdjacentHTML("beforeend", `<span class="step ok">${label(n)}</span>`);
+    for (const x of d.denied || []) steps.insertAdjacentHTML("beforeend", `<span class="step no">${label(x.tool)} · refused by the lock</span>`);
+    if (steps.children.length) wait.appendChild(steps);
+  } catch (err) {
+    wait.querySelector(".body").className = "body";
+    wait.querySelector(".body").textContent = "The shop is closed for a moment. Try again.";
+  }
+  log.scrollTop = log.scrollHeight;
+  working = false; send.disabled = false;
+  pump();
+}
+document.getElementById("f").onsubmit = (e) => {
+  e.preventDefault();
+  const text = t.value.trim(); if (!text) return;
+  t.value = ""; ask(who, text); t.focus();
+};
+// The deck drives the chat in demo 1: {type: "olli:say", who, text} and {type: "olli:clear"}.
+OlliEmbed.on("olli:say", (m) => ask(m.who || who, String(m.text || "")));
+OlliEmbed.on("olli:clear", () => { queue.length = 0; log.innerHTML = ""; add("", "Digital apprentice", "Good day. How may the shop help you?"); });
+</script>
+</body>
+</html>

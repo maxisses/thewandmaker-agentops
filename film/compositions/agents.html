@@ -1,0 +1,36 @@
+<template>
+  <style>
+    @font-face { font-family: "Red Hat Display"; src: url("assets/fonts/RedHatDisplay.ttf") format("truetype"); font-weight: 300 900; }
+    @font-face { font-family: "Red Hat Text"; src: url("assets/fonts/RedHatText.ttf") format("truetype"); font-weight: 300 700; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(180deg, #fff 0, #fff 65%, #e3f4f4 65%, #e3f4f4 100%); font-family: "Red Hat Display", sans-serif; color: #151515; }
+    .ln { position: absolute; left: 150px; font-weight: 800; font-size: 84px; line-height: 1.06; letter-spacing: -0.02em; width: 900px; opacity: 0; }
+    .sub { position: absolute; left: 150px; font-family: "Red Hat Text", sans-serif; font-weight: 500; font-size: 44px; line-height: 1.25; color: #4d4d4d; width: 900px; opacity: 0; }
+
+    #ag-paper { position: absolute; left: 1010px; top: 150px; width: 720px; height: 780px; background: #fffdf6; border: 5px solid #151515; padding: 34px 40px; opacity: 0; }
+    #ag-mast { font-weight: 900; font-size: 54px; letter-spacing: -0.03em; border-bottom: 6px double #151515; padding-bottom: 12px; }
+    #ag-head { font-weight: 900; font-size: 190px; line-height: 0.9; letter-spacing: -0.04em; margin-top: 38px; }
+    .ag-bar { height: 14px; border-radius: 7px; background: #c7c7c7; margin-top: 22px; }
+    #ag-spark { position: absolute; left: 1280px; top: 560px; width: 300px; height: 300px; opacity: 0; }
+    #ag-l1 { top: 150px; width: 780px; } #ag-s1 { top: 470px; width: 780px; }
+  </style>
+  <div id="root" data-composition-id="agents" data-width="1920" data-height="1080">
+    <div id="ag-paper"><div id="ag-mast">The Daily Prophet</div><div id="ag-head">AGENTS.</div>
+      <div class="ag-bar" style="width:92%"></div><div class="ag-bar" style="width:78%"></div><div class="ag-bar" style="width:86%"></div><div class="ag-bar" style="width:60%"></div><div class="ag-bar" style="width:82%"></div></div>
+    <svg id="ag-spark" viewBox="-100 -100 200 200"><path d="M0 -60 Q9 -9 60 0 Q9 9 0 60 Q-9 9 -60 0 Q-9 -9 0 -60Z" fill="#ee0000"/><circle r="86" fill="none" stroke="#ee0000" stroke-width="3" stroke-dasharray="4 14"/></svg>
+    <div class="ln" id="ag-l1">Then he read about agents.</div>
+    <div class="sub" id="ag-s1">He didn't sleep that night.</div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#ag-paper", { opacity: 0, y: 120, rotation: 6 }, { opacity: 1, y: 0, rotation: -3, duration: 0.6, ease: "power3.out" }, 0.1);
+      tl.fromTo("#ag-l1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0.5);
+      tl.fromTo("#ag-spark", { opacity: 0, scale: 0, rotation: -90 }, { opacity: 1, scale: 1, rotation: 0, duration: 0.6, ease: "back.out(2)" }, 2.6);
+      tl.fromTo("#ag-s1", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 3.3);
+      tl.fromTo("#ag-spark", { rotation: 0 }, { rotation: 40, duration: 3, ease: "sine.inOut", immediateRender: false }, 3.2);
+      tl.fromTo("#root", { opacity: 1 }, { opacity: 0, duration: 0.25, ease: "power2.in", immediateRender: false }, 6.2);
+      tl.set({}, {}, 6.5);
+      window.__timelines["agents"] = tl;
+    })();
+  </script>
+</template>
